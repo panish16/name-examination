@@ -8,7 +8,7 @@ const namexApiModule = await import('~/util/namex-api')
  * Click the given dropdown and choose a given option
  */
 export async function clickDropdownOption(
-  dropdown: DOMWrapper<any> | VueWrapper<any>,
+  dropdown: DOMWrapper<Element> | VueWrapper,
   option: string
 ) {
   const dropdownButton = dropdown.find('button')

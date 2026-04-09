@@ -7,7 +7,7 @@ import flushPromises from 'flush-promises'
 /* eslint-disable require-jsdoc */
 
 describe('Stats', () => {
-  let wrapper: VueWrapper<any, any>
+  let wrapper: VueWrapper
   let status = useStatusStore()
 
   beforeEach(() => {

@@ -3,6 +3,7 @@ import path from 'path'
 
 export default defineNuxtConfig({
   ssr: false,
+  telemetry: false,
   devServer: {
     port: 8080,
   },

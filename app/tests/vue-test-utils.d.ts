@@ -1,11 +1,12 @@
-import { BaseWrapper, DOMWrapper, VueWrapper } from '@vue/test-utils';
+import { BaseWrapper } from '@vue/test-utils';
+import { ComponentPublicInstance } from 'vue';
 
 declare module '@vue/test-utils' {
-  export class DOMWrapper {
-    findWithText(text: string): BaseWrapper;
+  interface DOMWrapper<NodeType extends Node> {
+    findWithText(text: string): BaseWrapper<Node>;
   }
 
-  export class VueWrapper {
-    findWithText(text: string): BaseWrapper;
+  interface VueWrapper<VM = unknown, T extends ComponentPublicInstance = VM & ComponentPublicInstance> {
+    findWithText(text: string): BaseWrapper<Node>;
   }
 }
