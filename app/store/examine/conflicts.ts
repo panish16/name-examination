@@ -5,7 +5,9 @@ import { highlightWord } from '~/util/html/highlight'
 
 export const useConflicts = defineStore('conflicts', () => {
   const exactMatches = ref<Array<ConflictListItem>>([])
+  const phoneticMatches = ref<Array<ConflictListItem>>([])
   const synonymMatches = ref<Array<ConflictListItem>>([])
+  const cobrsPhoneticMatches = ref<Array<ConflictListItem>>([])
 
   const loading = ref(false)
 
@@ -17,9 +19,7 @@ export const useConflicts = defineStore('conflicts', () => {
 
   /** The first `ConflictListItem`. */
   const firstConflictItem = computed(() =>
-    [...exactMatches.value, ...synonymMatches.value].at(
-      0
-    )
+    [...exactMatches.value, ...phoneticMatches.value, ...synonymMatches.value, ...cobrsPhoneticMatches.value].at(0)
   )
 
   function isConflictSelected(conflict: ConflictListItem) {
@@ -38,14 +38,17 @@ export const useConflicts = defineStore('conflicts', () => {
     }
   }
 
-  async function retrieveConflicts(query: string): Promise<[ConflictListItem[], ConflictListItem[], any[]]> {
+  async function retrieveConflicts(query: string): Promise<[ConflictListItem[], ConflictListItem[], ConflictListItem[], ConflictListItem[], any[]]> {
     const resp = await getConflicts(query)
     if (!resp.ok) throw new Error('Unable to retrieve exact matches')
     const json = await resp.json()
-    const exactMatches = parseExactMatches(json?.exactNames || [])
-    const similarMatches = parseSynonymMatches(json?.names || [])
+    const names: any[] = json?.names || []
+    const exact = parseExactMatches(json?.exactNames || [])
+    const phonetic = parseSynonymMatches(names.filter((r) => r.highlighting?.synonyms?.length > 0))
+    const synonym = parseSynonymMatches(names.filter((r) => r.highlighting?.stems?.length > 0))
+    const cobrs: ConflictListItem[] = []
     const histories = json?.histories
-    return [exactMatches, similarMatches, histories]
+    return [exact, phonetic, synonym, cobrs, histories]
   }
 
   function parseExactMatches(exactMatches: Array<any>): Array<ConflictListItem> {
@@ -128,9 +131,11 @@ export const useConflicts = defineStore('conflicts', () => {
     loading.value = true
     resetConflictLists()
     try {
-      const [exact, synonym, histories] = await retrieveConflicts(searchQuery)
+      const [exact, phonetic, synonym, cobrs, histories] = await retrieveConflicts(searchQuery)
       exactMatches.value = exact
+      phoneticMatches.value = phonetic
       synonymMatches.value = synonym
+      cobrsPhoneticMatches.value = cobrs
       return histories
     } catch (e) {
       resetMatches()
@@ -146,7 +151,9 @@ export const useConflicts = defineStore('conflicts', () => {
 
   function resetMatches() {
     exactMatches.value = []
+    phoneticMatches.value = []
     synonymMatches.value = []
+    cobrsPhoneticMatches.value = []
     loading.value = false
   }
 
@@ -204,7 +211,9 @@ export const useConflicts = defineStore('conflicts', () => {
   return {
     initialize,
     exactMatches,
+    phoneticMatches,
     synonymMatches,
+    cobrsPhoneticMatches,
     selectedConflicts,
     comparedConflicts,
     loading,
