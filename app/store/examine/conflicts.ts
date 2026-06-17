@@ -1,13 +1,12 @@
-import type { ConflictListItem } from '~/types'
-import { getConflicts } from '~/util/namex-api'
-import { highlightWord } from '~/util/html/highlight'
-
+import type { ConflictList, ConflictListItem, ConflictSource } from '~/types'
+import { getPossibleConflicts } from '~/util/namex-api'
+import { useExaminationRecipe } from './recipe'
 
 export const useConflicts = defineStore('conflicts', () => {
   const exactMatches = ref<Array<ConflictListItem>>([])
-  const phoneticMatches = ref<Array<ConflictListItem>>([])
-  const synonymMatches = ref<Array<ConflictListItem>>([])
-  const cobrsPhoneticMatches = ref<Array<ConflictListItem>>([])
+  const synonymMatches = ref<Array<ConflictList>>([])
+  const cobrsPhoneticMatches = ref<Array<ConflictList>>([])
+  const phoneticMatches = ref<Array<ConflictList>>([])
 
   const loading = ref(false)
 
@@ -33,7 +32,9 @@ export const useConflicts = defineStore('conflicts', () => {
 
   /** The first `ConflictListItem` among every `ConflictList` across all buckets. */
   const firstConflictItem = computed(() =>
-    [...exactMatches.value, ...phoneticMatches.value, ...synonymMatches.value, ...cobrsPhoneticMatches.value].at(0)
+    [...exactMatches.value, ...lists.value.flatMap((list) => list.children)].at(
+      0
+    )
   )
 
   function isConflictSelected(conflict: ConflictListItem) {
@@ -52,104 +53,72 @@ export const useConflicts = defineStore('conflicts', () => {
     }
   }
 
-  async function retrieveConflicts(query: string): Promise<[ConflictListItem[], ConflictListItem[], ConflictListItem[], ConflictListItem[], any[]]> {
-    const resp = await getConflicts(query)
-    if (!resp.ok) throw new Error('Unable to retrieve exact matches')
-    const json = await resp.json()
-    const names: any[] = json?.names || []
-    const exact = parseExactMatches(json?.exactNames || [])
-    const phonetic = parseSynonymMatches(names.filter((r) => r.highlighting?.synonyms?.length > 0))
-    const synonym = parseSynonymMatches(names.filter((r) => r.highlighting?.stems?.length > 0))
-    const cobrs: ConflictListItem[] = []
-    const histories = json?.histories
-    return [exact, phonetic, synonym, cobrs, histories]
-  }
-
-  function parseExactMatches(exactMatches: Array<any>): Array<ConflictListItem> {
-    return exactMatches.map((match) => {
-      return {
-        text: match.name,
-        highlightedText: match.name,
-        nrNumber: match.parent_id,
-        startDate: match.parent_start_date,
-        jurisdiction: match.parent_jurisdiction,
-        source: match.parent_type,
-        ui: {
-          focused: false,
-          open: false,
-        },
-      }
-    })
-  }
-
-  function parseSynonymMatches(synonymMatches: Array<any>): Array<ConflictListItem> {
-    return synonymMatches.map((match) => {
-      const highlightedName = highlightNameChoices(match)
-      return {
-        text: match.name,
-        highlightedText: highlightedName,
-        nrNumber: match.parent_id,
-        startDate: match.parent_start_date,
-        jurisdiction: match.parent_jurisdiction,
-        source: match.parent_type,
-        ui: {
-          focused: false,
-          open: false,
-        },
-      }
-    })
-  }
-
-  function highlightNameChoices(entry: any): string {
-    const name: string = entry?.name ?? ''
-    const highlighting = entry?.highlighting
-
-    // If we have nothing to highlight, keep original text intact
-    if (!name || !highlighting) {
-      return name
+  /** Map a single result from possible-conflicts response to a ConflictListItem */
+  function mapToItem(result: any): ConflictListItem {
+    const source =
+      result.parent_type === 'CORP'
+        ? ('CORP' as unknown as ConflictSource)
+        : ('NAMEREQUEST' as unknown as ConflictSource)
+    return {
+      text: result.name,
+      highlightedText: result.name,
+      nrNumber: result.parent_id,
+      startDate: result.parent_start_date ?? '',
+      jurisdiction: result.parent_jurisdiction ?? undefined,
+      source,
+      ui: { focused: false, open: false },
     }
-
-    // Split into word and whitespace tokens so we preserve spacing exactly
-    const tokens = name.split(/(\s+)/)
-
-    const exactList: string[] = Array.isArray(highlighting.exact) ? highlighting.exact : []
-    const synonymList: string[] = Array.isArray(highlighting.synonyms) ? highlighting.synonyms : []
-    const stemList: string[] = Array.isArray(highlighting.stems) ? highlighting.stems : []
-
-    const applyFirstMatchingCategory = (word: string): string => {
-      // exact > synonym > stem
-      for (const exact of exactList) {
-        const highlighted = highlightWord(exact, word, 'exact-highlight')
-        if (highlighted !== word) return highlighted
-      }
-
-      for (const synonym of synonymList) {
-        const highlighted = highlightWord(synonym, word, 'synonym-highlight')
-        if (highlighted !== word) return highlighted
-      }
-
-      for (const stem of stemList) {
-        const highlighted = highlightWord(stem, word, 'stem-highlight')
-        if (highlighted !== word) return highlighted
-      }
-
-      return word
-    }
-
-    return tokens
-      .map((token) => (token.trim().length === 0 ? token : applyFirstMatchingCategory(token)))
-      .join('')
   }
 
-  async function initialize(searchQuery: string, exactPhrase: string) {
+  /** Group a flat list of results into ConflictList buckets by a highlight key */
+  function groupIntoLists(
+    results: any[],
+    highlightKey: 'stems' | 'synonyms'
+  ): Array<ConflictList> {
+    if (!results?.length) return []
+    const group: ConflictList = {
+      text: highlightKey === 'stems' ? 'Stem Matches' : 'Synonym Matches',
+      highlightedText: highlightKey === 'stems' ? 'Stem Matches' : 'Synonym Matches',
+      meta: undefined,
+      children: results
+        .filter((r) => r.highlighting?.[highlightKey]?.length > 0)
+        .map(mapToItem),
+      ui: { focused: false, open: false },
+    }
+    return group.children.length > 0 ? [group] : []
+  }
+
+  async function initialize(searchQuery: string, _exactPhrase: string) {
     loading.value = true
     resetConflictLists()
     try {
-      const [exact, phonetic, synonym, cobrs, histories] = await retrieveConflicts(searchQuery)
-      exactMatches.value = exact
-      phoneticMatches.value = phonetic
-      synonymMatches.value = synonym
-      cobrsPhoneticMatches.value = cobrs
+      const response = await getPossibleConflicts(searchQuery)
+      if (!response.ok) throw new Error('Unable to retrieve possible conflicts')
+
+      const data = await response.json()
+      const results: any[] = data.names ?? []
+      const exact: any[] = data.exactNames ?? []
+      const histories: any[] = data.histories ?? []
+
+      // Exact Match bucket
+      exactMatches.value = exact.map(mapToItem)
+      exactMatches.value.forEach((match) => selectConflict(match))
+
+      // Phonetic Match bucket — results with synonym highlights
+      phoneticMatches.value = groupIntoLists(results, 'synonyms')
+
+      // Synonym Match bucket — results with stem highlights
+      synonymMatches.value = groupIntoLists(results, 'stems')
+
+      // Character Swap bucket — empty (COBRS not separated in new API yet)
+      cobrsPhoneticMatches.value = []
+
+      if (exactMatches.value.length === 0 && nonEmptyLists.value.length > 0) {
+        nonEmptyLists.value[0].ui.open = true
+      }
+      useExaminationRecipe().reset()
+
+      // return raw history matches for the caller (parseHistoryMatches in the examine store)
       return histories
     } catch (e) {
       resetMatches()
@@ -165,9 +134,9 @@ export const useConflicts = defineStore('conflicts', () => {
 
   function resetMatches() {
     exactMatches.value = []
-    phoneticMatches.value = []
     synonymMatches.value = []
     cobrsPhoneticMatches.value = []
+    phoneticMatches.value = []
     loading.value = false
   }
 
@@ -198,7 +167,7 @@ export const useConflicts = defineStore('conflicts', () => {
   }
 
   /** Reset selectedConflicts and comparedConflicts and save existing data */
-  function disableAutoAdd() {
+  function disableAutoAdd () {
     if (!autoAdd.value) {
       const initialRun = (prevSelectedConflicts.value.length === 0 && prevComparedConflicts.value.length === 0)
       for (const conflict of selectedConflicts.value) {
@@ -215,7 +184,7 @@ export const useConflicts = defineStore('conflicts', () => {
   }
 
   /** Reassign selectedConflicts and comparedConflicts */
-  function enableAutoAdd() {
+  function enableAutoAdd () {
     if (autoAdd.value) {
       selectedConflicts.value = prevSelectedConflicts.value
       comparedConflicts.value = prevComparedConflicts.value
@@ -225,9 +194,9 @@ export const useConflicts = defineStore('conflicts', () => {
   return {
     initialize,
     exactMatches,
-    phoneticMatches,
     synonymMatches,
     cobrsPhoneticMatches,
+    phoneticMatches,
     selectedConflicts,
     comparedConflicts,
     loading,
@@ -241,7 +210,9 @@ export const useConflicts = defineStore('conflicts', () => {
     disableAutoAdd,
     enableAutoAdd,
     autoAdd,
+    lists,
+    nonEmptyLists,
     firstConflictItem,
-    syncSelectedAndComparedConflicts
+    syncSelectedAndComparedConflicts,
   }
 })

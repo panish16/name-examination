@@ -153,15 +153,7 @@ export async function postTrademarks(query: string) {
 }
 
 export async function postConditions(query: string) {
-  const url = getNamexApiUrl(`/documents/restricted-words`)
-  return callNamexApi(
-    url,
-    {
-      method: 'POST',
-      body: JSON.stringify({ type: 'plain_text', content: query }),
-    },
-    { 'content-type': 'application/json' }
-  )
+  return postDocuments('restricted_words', query)
 }
 
 export async function postHistories(query: string) {
@@ -172,8 +164,10 @@ export async function getDecisionReasons() {
   return callNamexApi(getNamexApiUrl(`/requests/decisionreasons`))
 }
 
-export async function getConflicts(query: string) {
-  return callNamexApi(getNamexApiUrl(`/requests/possible-conflicts/${query}`))
+export async function getPossibleConflicts(name: string): Promise<Response> {
+  return callNamexApi(
+    getNamexApiUrl(`/requests/possible-conflicts/${encodeURIComponent(name)}`)
+  )
 }
 
 export async function getNextNrNumber(isPriority: boolean) {

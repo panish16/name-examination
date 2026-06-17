@@ -21,18 +21,19 @@
 
       <ExamineRecipeConflictsBucket
         title="Phonetic Match (experimental)"
-        :conflict-items="conflicts.phoneticMatches"
+        :conflict-lists="conflicts.phoneticMatches"
       />
 
       <ExamineRecipeConflictsBucket
         title="Exact Word Order + Synonym Match"
-        :conflict-items="conflicts.synonymMatches"
+        :conflict-lists="conflicts.synonymMatches"
       />
 
       <ExamineRecipeConflictsBucket
         title="Character Swap Match"
-        :conflict-items="conflicts.cobrsPhoneticMatches"
+        :conflict-lists="conflicts.cobrsPhoneticMatches"
       />
+
     </div>
   </div>
 </template>
