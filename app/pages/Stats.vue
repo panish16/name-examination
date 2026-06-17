@@ -10,10 +10,10 @@
       <div class="font-semibold text-center">Total Examined Names: {{ numRecords }}</div>
       <div class="flex items-center space-x-2">
         <div class="flex items-center space-x-1">
-          <input 
-            id="stats-checkbox" 
-            class="h-4 w-4" 
-            v-model="myStats" 
+          <input
+            id="stats-checkbox"
+            class="h-4 w-4"
+            v-model="myStats"
             type="checkbox"
             data-testid="statsCheckbox"
           >
@@ -21,12 +21,12 @@
         </div>
         <div class="timespan-input  align-baseline space-x-1">
           <label for="timespan" class="font-bold align-baseline">Hours:&nbsp;</label>
-          <TextInput 
-            id="timespan" 
-            ref="numberinput" 
-            v-model="timespan" 
-            type="number" 
-            class="!w-24" 
+          <TextInput
+            id="timespan"
+            ref="numberinput"
+            v-model="timespan"
+            type="number"
+            class="!w-24"
             data-testid="statsHoursInput"
           />
           <IconButton @click="fetchStats" data-testid="getStatsBtn">
@@ -49,34 +49,34 @@
           <tr v-for="(item, index) in statsData" :key="index"
             class="align-top transition duration-200 ease-in-out border-b border-gray-300 hover:bg-gray-200">
             <td class="whitespace-pre-line border-b border-gray-300 px-2 py-2">
-              <div class="container-fluid">
-                <div class="layout">
-                  <div class="flex my-2 font-bold">
+              <span class="container-fluid">
+                <span class="layout">
+                  <span class="flex my-2 font-bold">
                     {{ item.nrNum }}
-                  </div>
-                </div>
-                <div v-for="(name, i) in item.names" :key="`names-layout-${i}`">
-                  <div class="flex font-bold">
+                  </span>
+                </span>
+                <span v-for="(name, i) in item.names" :key="`names-layout-${i}`">
+                  <span class="flex font-bold">
                     {{ i + 1 }}. {{ name.name }}
                     <span class="mx-2" :class="getClass(name.state)">
                       {{ name.state }}
                     </span>
-                  </div>
-                  <div class="layout">
-                    <div v-for="(text, j) in name.decision_text" :key="`decision-text-flex-${j}`"
+                  </span>
+                  <span class="layout">
+                    <span v-for="(text, j) in name.decision_text" :key="`decision-text-flex-${j}`"
                       class="flex italic mb-2 ml-4">
                       {{ text }}
-                    </div>
-                  </div>
-                </div>
-                <div v-if="item.comments.length > 0" class="ml-2 mt-1 font-semibold">
+                    </span>
+                  </span>
+                </span>
+                <span v-if="item.comments.length > 0" class="ml-2 mt-1 font-semibold">
                   LAST COMMENT
-                </div>
-                <div v-if="item.comments.length > 0" class="dk-grey ml-2 mb-2">
-                  <div class="flex indent-10px">
+                </span>
+                <span v-if="item.comments.length > 0" class="dk-grey ml-2 mb-2">
+                  <span class="flex indent-10px">
                     {{ item.comments[0].comment }}
-                  </div>
-                  <div class="flex ft-ital indent-10px">
+                  </span>
+                  <span class="flex ft-ital indent-10px">
                     <template v-if="item.comments[0].examiner">
                       <template v-for="(value, name) in item.comments[0].examiner">
                         -{{ name }}: {{ value }},
@@ -86,9 +86,9 @@
                       <span class="mr-2">–unknown examiner,</span>
                     </template>
                     {{ item.comments[0].timestamp }}
-                  </div>
-                </div>
-              </div>
+                  </span>
+                </span>
+              </span>
             </td>
             <td :class="getClass(item.stateCd)" class="font-semibold">
               {{ item.stateCd }}
@@ -172,7 +172,7 @@ export default {
     /**
      * Determines the CSS class based on the provided state.
      * @param {string} state - The state value used to determine the CSS class.
-     * @return {string | undefined} Returns the CSS class corresponding to the provided state. 
+     * @return {string | undefined} Returns the CSS class corresponding to the provided state.
      * If the state does not match any condition, returns undefined.
      */
     function getClass(state) {

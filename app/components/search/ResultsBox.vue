@@ -99,7 +99,6 @@
         </tr>
       </tbody>
     </table>
-
     <div v-if="search.isLoading"
          class="absolute bottom-1/2 right-1/2 translate-x-1/2 translate-y-1/2 transform">
       <LoadingSpinner />
