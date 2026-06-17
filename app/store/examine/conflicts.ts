@@ -17,7 +17,21 @@ export const useConflicts = defineStore('conflicts', () => {
   const prevComparedConflicts = ref<Array<ConflictListItem>>([])
   const autoAdd = ref(true)
 
-  /** The first `ConflictListItem`. */
+  /** Flattened array of every `ConflictList` across all buckets. */
+  const lists = computed<Array<ConflictList>>(() =>
+    [
+      phoneticMatches.value,
+      synonymMatches.value,
+      cobrsPhoneticMatches.value,
+    ].flat()
+  )
+
+  /** List of all `ConflictList`s that contain items within them. */
+  const nonEmptyLists = computed(() =>
+    lists.value.filter((list) => list.children.length > 0)
+  )
+
+  /** The first `ConflictListItem` among every `ConflictList` across all buckets. */
   const firstConflictItem = computed(() =>
     [...exactMatches.value, ...phoneticMatches.value, ...synonymMatches.value, ...cobrsPhoneticMatches.value].at(0)
   )
