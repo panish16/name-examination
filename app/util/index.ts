@@ -120,13 +120,14 @@ export function getCircularIndex(i: number, n: number) {
   return ((i % n) + n) % n
 }
 
-/** Distinguish a parameter that may be a `ConflictListItem` or a `ConflictList` */
+/** Distinguish a parameter that may be a `ConflictListItem` */
 export function isConflictListItem(
   obj: ConflictListItem | ConflictList
 ): obj is ConflictListItem {
   return 'nrNumber' in obj
 }
 
+/** Distinguish a parameter that may be a `ConflictList` */
 export function isConflictList(
   obj: ConflictListItem | ConflictList
 ): obj is ConflictList {

@@ -98,6 +98,7 @@ export const useConflicts = defineStore('conflicts', () => {
       const data = await response.json()
       const results: any[] = data.names ?? []
       const exact: any[] = data.exactNames ?? []
+      const histories: any[] = data.histories ?? []
 
       // Exact Match bucket
       exactMatches.value = exact.map(mapToItem)
@@ -116,6 +117,9 @@ export const useConflicts = defineStore('conflicts', () => {
         nonEmptyLists.value[0].ui.open = true
       }
       useExaminationRecipe().reset()
+
+      // return raw history matches for the caller (parseHistoryMatches in the examine store)
+      return histories
     } catch (e) {
       resetMatches()
       throw e
