@@ -30,8 +30,8 @@
       />
 
       <ExamineRecipeConflictsBucket
-        title="Exact Word Order + Synonym Match"
-        :conflict-items="conflicts.synonymMatches"
+        title="Character Swap Match"
+        :conflict-lists="conflicts.cobrsPhoneticMatches"
       />
 
     </div>

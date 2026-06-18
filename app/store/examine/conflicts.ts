@@ -4,9 +4,9 @@ import { useExaminationRecipe } from './recipe'
 
 export const useConflicts = defineStore('conflicts', () => {
   const exactMatches = ref<Array<ConflictListItem>>([])
-  const phoneticMatches = ref<Array<ConflictListItem>>([])
-  const synonymMatches = ref<Array<ConflictListItem>>([])
-  const cobrsPhoneticMatches = ref<Array<ConflictListItem>>([])
+  const synonymMatches = ref<Array<ConflictList>>([])
+  const cobrsPhoneticMatches = ref<Array<ConflictList>>([])
+  const phoneticMatches = ref<Array<ConflictList>>([])
 
   const loading = ref(false)
 
@@ -32,7 +32,9 @@ export const useConflicts = defineStore('conflicts', () => {
 
   /** The first `ConflictListItem` among every `ConflictList` across all buckets. */
   const firstConflictItem = computed(() =>
-    [...exactMatches.value, ...phoneticMatches.value, ...synonymMatches.value, ...cobrsPhoneticMatches.value].at(0)
+    [...exactMatches.value, ...lists.value.flatMap((list) => list.children)].at(
+      0
+    )
   )
 
   function isConflictSelected(conflict: ConflictListItem) {
@@ -96,6 +98,7 @@ export const useConflicts = defineStore('conflicts', () => {
       const data = await response.json()
       const results: any[] = data.names ?? []
       const exact: any[] = data.exactNames ?? []
+      const histories: any[] = data.histories ?? []
 
       // Exact Match bucket
       exactMatches.value = exact.map(mapToItem)
@@ -114,6 +117,9 @@ export const useConflicts = defineStore('conflicts', () => {
         nonEmptyLists.value[0].ui.open = true
       }
       useExaminationRecipe().reset()
+
+      // return raw history matches for the caller (parseHistoryMatches in the examine store)
+      return histories
     } catch (e) {
       resetMatches()
       throw e
@@ -128,9 +134,9 @@ export const useConflicts = defineStore('conflicts', () => {
 
   function resetMatches() {
     exactMatches.value = []
-    phoneticMatches.value = []
     synonymMatches.value = []
     cobrsPhoneticMatches.value = []
+    phoneticMatches.value = []
     loading.value = false
   }
 
@@ -161,7 +167,7 @@ export const useConflicts = defineStore('conflicts', () => {
   }
 
   /** Reset selectedConflicts and comparedConflicts and save existing data */
-  function disableAutoAdd() {
+  function disableAutoAdd () {
     if (!autoAdd.value) {
       const initialRun = (prevSelectedConflicts.value.length === 0 && prevComparedConflicts.value.length === 0)
       for (const conflict of selectedConflicts.value) {
@@ -178,7 +184,7 @@ export const useConflicts = defineStore('conflicts', () => {
   }
 
   /** Reassign selectedConflicts and comparedConflicts */
-  function enableAutoAdd() {
+  function enableAutoAdd () {
     if (autoAdd.value) {
       selectedConflicts.value = prevSelectedConflicts.value
       comparedConflicts.value = prevComparedConflicts.value
@@ -188,9 +194,9 @@ export const useConflicts = defineStore('conflicts', () => {
   return {
     initialize,
     exactMatches,
-    phoneticMatches,
     synonymMatches,
     cobrsPhoneticMatches,
+    phoneticMatches,
     selectedConflicts,
     comparedConflicts,
     loading,
@@ -204,7 +210,9 @@ export const useConflicts = defineStore('conflicts', () => {
     disableAutoAdd,
     enableAutoAdd,
     autoAdd,
+    lists,
+    nonEmptyLists,
     firstConflictItem,
-    syncSelectedAndComparedConflicts
+    syncSelectedAndComparedConflicts,
   }
 })

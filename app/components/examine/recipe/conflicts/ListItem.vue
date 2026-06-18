@@ -85,13 +85,8 @@ emitter.on('scrollToConflictObject', ({ obj, instant }) => {
   font-weight: bold;
 }
 
-.synonym-highlight {
+.synonym-stem-highlight {
   color: #e0a800;
-  font-weight: bold;
-}
-
-.exact-highlight {
-  color: #dc2626;
   font-weight: bold;
 }
 
