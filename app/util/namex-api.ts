@@ -153,7 +153,15 @@ export async function postTrademarks(query: string) {
 }
 
 export async function postConditions(query: string) {
-  return postDocuments('restricted_words', query)
+  const url = getNamexApiUrl(`/documents/restricted-words`)
+  return callNamexApi(
+    url,
+    {
+      method: 'POST',
+      body: JSON.stringify({ type: 'plain_text', content: query }),
+    },
+    { 'content-type': 'application/json' }
+  )
 }
 
 export async function postHistories(query: string) {
